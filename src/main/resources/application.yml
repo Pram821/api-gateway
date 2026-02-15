@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Frontend context path /aurora-service → Backend context path /seller-center
+        - id: aurora-to-seller-center
+          uri: http://hello-springboot.default.svc.cluster.local:8080
+          predicates:
+            - Path=/aurora-service/**
+          filters:
+            - RewritePath=/aurora-service/(?<segment>.*), /seller-center/${segment}
+
+        # Direct backend access (optional)
+        - id: seller-center-direct
+          uri: http://hello-springboot.default.svc.cluster.local:8080
+          predicates:
+            - Path=/seller-center/**
+
+      default-filters:
+        - AddResponseHeader=X-Gateway, api-gateway
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    gateway:
+      enabled: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
