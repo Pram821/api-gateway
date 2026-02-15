@@ -4,35 +4,25 @@ server:
 spring:
   application:
     name: api-gateway
-  cloud:
-    gateway:
-      routes:
-        # Frontend context path /aurora-service → Backend context path /seller-center
-        - id: aurora-to-seller-center
-          uri: http://hello-springboot.default.svc.cluster.local:8080
-          predicates:
-            - Path=/aurora-service/**
-          filters:
-            - RewritePath=/aurora-service/(?<segment>.*), /seller-center/${segment}
 
-        # Direct backend access (optional)
-        - id: seller-center-direct
-          uri: http://hello-springboot.default.svc.cluster.local:8080
-          predicates:
-            - Path=/seller-center/**
+zuul:
+  routes:
+    # Frontend calls /aurora-service/** → Backend /seller-center/**
+    seller-center:
+      path: /aurora-service/**
+      url: http://hello-springboot.default.svc.cluster.local:8080
+      stripPrefix: true
 
-      default-filters:
-        - AddResponseHeader=X-Gateway, api-gateway
+  # Add prefix /seller-center when forwarding
+  prefix: ""
+  add-proxy-headers: true
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
-  endpoint:
-    gateway:
-      enabled: true
+        include: health,info,routes
 
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
+    com.netflix.zuul: DEBUG
